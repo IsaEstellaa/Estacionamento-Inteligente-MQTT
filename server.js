@@ -1,3 +1,4 @@
+import { initDB } from './database.js';
 import express from 'express';
 import mqtt from 'mqtt';
 
@@ -5,9 +6,11 @@ const app = express();
 app.use(express.json());
 
 const PORT = 3000;
+const db = await initDB();
 
 // estado em memória
 const spots = {};
+const incidents = [];
 
 // inicializar 90 vagas
 ['A', 'B', 'C'].forEach(sector => {
@@ -17,7 +20,8 @@ const spots = {};
     spots[spotId] = {
       sectorId: sector,
       state: 'FREE',
-      ts: null
+      ts: null,
+      lastChange: Date.now()
     };
   }
 });
@@ -30,15 +34,82 @@ client.on('connect', () => {
   client.subscribe('campus/parking/#');
 });
 
-client.on('message', (topic, message) => {
+client.on('message', async (topic, message) => {
   try {
     const data = JSON.parse(message.toString());
 
-    spots[data.spotId] = {
+    const now = Date.now();
+
+    const currentSpot = spots[data.spotId];
+
+    // detectar flapping
+    if (
+      currentSpot &&
+      currentSpot.state !== data.state &&
+      currentSpot.lastChange &&
+      (now - currentSpot.lastChange < 5000)
+    ) {
+      incidents.push({
+        type: 'FLAPPING',
+        spotId: data.spotId,
         sectorId: data.sectorId,
-        state: data.state,
-        ts: data.ts
+        ts: new Date().toISOString(),
+        severity: 'HIGH'
+      });
+
+      await db.run(
+        `INSERT INTO incidents
+        (tsOpen, type, severity, sectorId, spotId, evidenceJson, status)
+        VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        [
+          new Date().toISOString(),
+          'FLAPPING',
+          'HIGH',
+          data.sectorId,
+          data.spotId,
+          JSON.stringify(data),
+          'OPEN'
+        ]
+      );
+
+      console.log(`🚨 FLAPPING detectado em ${data.spotId}`);
+    }
+
+    await db.run(
+      `INSERT OR IGNORE INTO spot_events
+      (eventId, ts, sectorId, spotId, state, rawPayloadJson)
+      VALUES (?, ?, ?, ?, ?, ?)`,
+      [
+        data.eventId,
+        data.ts,
+        data.sectorId,
+        data.spotId,
+        data.state,
+        JSON.stringify(data)
+      ]
+    );
+
+    // atualizar vaga
+    spots[data.spotId] = {
+      sectorId: data.sectorId,
+      state: data.state,
+      ts: data.ts,
+      lastChange: now
     };
+
+    await db.run(
+      `UPDATE spots
+      SET currentState = ?,
+          lastChangeTs = ?,
+          lastEventId = ?
+      WHERE spotId = ?`,
+      [
+        data.state,
+        data.ts,
+        data.eventId,
+        data.spotId
+      ]
+    );
 
     console.log(`📍 ${data.spotId} → ${data.state}`);
 
@@ -73,9 +144,9 @@ app.get('/api/v1/map', (req, res) => {
 // rota /sectors
 app.get('/api/v1/sectors', (req, res) => {
   const sectors = {
-    A: { occupied: 0, free: 0 },
-    B: { occupied: 0, free: 0 },
-    C: { occupied: 0, free: 0 }
+    A: { occupied: 0, free: 0, lastUpdateTs: null },
+    B: { occupied: 0, free: 0, lastUpdateTs: null },
+    C: { occupied: 0, free: 0, lastUpdateTs: null }
   };
 
   Object.values(spots).forEach(spot => {
@@ -84,17 +155,22 @@ app.get('/api/v1/sectors', (req, res) => {
     } else {
       sectors[spot.sectorId].free++;
     }
+
+    if (spot.ts) {
+      sectors[spot.sectorId].lastUpdateTs = spot.ts;
+    }
   });
 
   const result = Object.entries(sectors).map(([sectorId, data]) => {
-    const total = data.occupied + data.free;
-    const occupancyRate = total > 0 ? data.occupied / total : 0;
+    const totalSpots = data.occupied + data.free;
 
     return {
       sectorId,
       occupiedCount: data.occupied,
       freeCount: data.free,
-      occupancyRate
+      totalSpots,
+      occupancyRate: data.occupied / totalSpots,
+      lastUpdateTs: data.lastUpdateTs
     };
   });
 
@@ -125,6 +201,82 @@ app.get('/api/v1/sectors/:sectorId/free-spots', (req, res) => {
   });
 });
 
-app.listen(PORT, () => {
+app.get('/api/v1/recommendation', async (req, res) => {
+  const fromSector = req.query.fromSector;
+
+  if (!['A', 'B', 'C'].includes(fromSector)) {
+    return res.status(400).json({
+      error: 'Setor inválido'
+    });
+  }
+
+  // calcular ocupação dos setores
+  const sectors = {};
+
+  ['A', 'B', 'C'].forEach(sector => {
+    const sectorSpots = Object.values(spots)
+      .filter(spot => spot.sectorId === sector);
+
+    const occupied = sectorSpots
+      .filter(spot => spot.state === 'OCCUPIED').length;
+
+    const free = sectorSpots
+      .filter(spot => spot.state === 'FREE').length;
+
+    sectors[sector] = {
+      occupied,
+      free,
+      occupancyRate: occupied / (occupied + free)
+    };
+  });
+
+  const currentSector = sectors[fromSector];
+
+  // regra de 90%
+  if (currentSector.occupancyRate < 0.9) {
+    return res.json({
+      message: `Setor ${fromSector} ainda não está lotado`
+    });
+  }
+
+  // encontrar melhor setor
+  const recommendation = Object.entries(sectors)
+    .filter(([sector]) => sector !== fromSector)
+    .sort((a, b) => b[1].free - a[1].free)[0];
+
+  const [recommendedSector, data] = recommendation;
+
+  const reason = `Setor ${fromSector} está com ${(currentSector.occupancyRate * 100).toFixed(0)}% de ocupação; o setor ${recommendedSector} possui ${data.free} vagas livres`;
+
+  await db.run(
+    `INSERT INTO recommendations_log
+    (ts, fromSector, recommendedSector, reason, dataJson)
+    VALUES (?, ?, ?, ?, ?)`,
+    [
+      new Date().toISOString(),
+      fromSector,
+      recommendedSector,
+      reason,
+      JSON.stringify({
+        fromSector,
+        recommendedSector
+      })
+    ]
+  );
+
+  res.json({
+    fromSector,
+    recommendedSector,
+    message: `Setor ${fromSector} lotado. Vá para o setor ${recommendedSector}`,
+    reason: reason,
+    ts: new Date().toISOString()
+  });
+});
+
+app.get('/api/v1/incidents', (req, res) => {
+  res.json(incidents);
+});
+
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 API rodando em http://localhost:${PORT}`);
 });
