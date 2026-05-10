@@ -12,19 +12,19 @@ const db = await initDB();
 const spots = {};
 const incidents = [];
 
-// inicializar 90 vagas
-['A', 'B', 'C'].forEach(sector => {
-  for (let i = 1; i <= 30; i++) {
-    const spotId = `${sector}-${String(i).padStart(2, '0')}`;
+// inicializar as 90 vagas com base no banco de dados
+const savedSpots = await db.all('SELECT * FROM spots');
 
-    spots[spotId] = {
-      sectorId: sector,
-      state: 'FREE',
-      ts: null,
-      lastChange: Date.now()
-    };
-  }
+savedSpots.forEach(spot => {
+  spots[spot.spotId] = {
+    sectorId: spot.sectorId,
+    state: spot.currentState,
+    ts: spot.lastChangeTs,
+    lastChange: Date.now()
+  };
 });
+
+console.log(`✅ ${savedSpots.length} vagas carregadas do banco`);
 
 // conexão MQTT
 const client = mqtt.connect('mqtt://localhost:1883');
@@ -273,7 +273,20 @@ app.get('/api/v1/recommendation', async (req, res) => {
   });
 });
 
-app.get('/api/v1/incidents', (req, res) => {
+app.get('/api/v1/recommendations', async (req, res) => {
+  const recommendations = await db.all(
+    `SELECT * FROM recommendations_log
+     ORDER BY ts DESC`
+  );
+
+  res.json(recommendations);
+});
+
+app.get('/api/v1/incidents', async (req, res) => {
+  const incidents = await db.all(
+    `SELECT * FROM incidents ORDER BY tsOpen DESC`
+  );
+
   res.json(incidents);
 });
 
