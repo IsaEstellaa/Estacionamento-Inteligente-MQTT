@@ -117,80 +117,86 @@
         "type": "ui_group",
         "name": "Mapa de Vagas",
         "tab": "9528e7d89a9bfd9e",
-        "order": 1,
+        "order": 2,
         "disp": true,
         "width": "24",
         "collapse": false,
         "className": ""
     },
     {
-        "id": "35504eab92b98131",
-        "type": "inject",
-        "z": "09c2c15ffa1b32b4",
-        "name": "",
-        "props": [
-            {
-                "p": "payload"
-            },
-            {
-                "p": "topic",
-                "vt": "str"
-            }
-        ],
-        "repeat": "",
-        "crontab": "",
-        "once": false,
-        "onceDelay": 0.1,
-        "topic": "",
-        "payload": "",
-        "payloadType": "date",
-        "x": 180,
-        "y": 140,
-        "wires": [
-            [
-                "3780ddb3af7fed09"
-            ]
-        ]
+        "id": "8d64165c1b9009b0",
+        "type": "ui_group",
+        "name": "Resumo dos Setores",
+        "tab": "9528e7d89a9bfd9e",
+        "order": 3,
+        "disp": true,
+        "width": "24",
+        "collapse": false,
+        "className": ""
     },
     {
-        "id": "3780ddb3af7fed09",
-        "type": "http request",
-        "z": "09c2c15ffa1b32b4",
-        "name": "",
-        "method": "GET",
-        "ret": "obj",
-        "paytoqs": "ignore",
-        "url": "http://localhost:3000/api/v1/map",
-        "tls": "",
-        "persist": false,
-        "proxy": "",
-        "insecureHTTPParser": false,
-        "authType": "",
-        "senderr": false,
-        "headers": [],
-        "x": 380,
-        "y": 140,
-        "wires": [
-            [
-                "ccdc180cb700a1cb"
-            ]
-        ]
+        "id": "9752a0380f4fdadb",
+        "type": "ui_group",
+        "name": "Incidentes",
+        "tab": "9528e7d89a9bfd9e",
+        "order": 4,
+        "disp": true,
+        "width": "24",
+        "collapse": false,
+        "className": ""
     },
     {
-        "id": "ccdc180cb700a1cb",
-        "type": "debug",
-        "z": "09c2c15ffa1b32b4",
-        "name": "debug 1",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "false",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 560,
-        "y": 140,
-        "wires": []
+        "id": "64b2aed97e84ccf9",
+        "type": "ui_group",
+        "name": "Recomendações",
+        "tab": "9528e7d89a9bfd9e",
+        "order": 5,
+        "disp": true,
+        "width": "24",
+        "collapse": false,
+        "className": ""
+    },
+    {
+        "id": "f54204d4b3c8a93e",
+        "type": "mqtt-broker",
+        "name": "",
+        "broker": "localhost",
+        "port": 1883,
+        "clientid": "",
+        "autoConnect": true,
+        "usetls": false,
+        "protocolVersion": 4,
+        "keepalive": 60,
+        "cleansession": true,
+        "autoUnsubscribe": true,
+        "birthTopic": "",
+        "birthQos": "0",
+        "birthRetain": "false",
+        "birthPayload": "",
+        "birthMsg": {},
+        "closeTopic": "",
+        "closeQos": "0",
+        "closeRetain": "false",
+        "closePayload": "",
+        "closeMsg": {},
+        "willTopic": "",
+        "willQos": "0",
+        "willRetain": "false",
+        "willPayload": "",
+        "willMsg": {},
+        "userProps": "",
+        "sessionExpiry": ""
+    },
+    {
+        "id": "526f108b9eb2d787",
+        "type": "ui_group",
+        "name": "Controle de ações",
+        "tab": "9528e7d89a9bfd9e",
+        "order": 1,
+        "disp": true,
+        "width": "24",
+        "collapse": false,
+        "className": ""
     },
     {
         "id": "11c6923136265617",
@@ -206,15 +212,15 @@
                 "vt": "str"
             }
         ],
-        "repeat": "",
+        "repeat": "2",
         "crontab": "",
         "once": true,
         "onceDelay": 0.1,
         "topic": "",
         "payload": "",
         "payloadType": "date",
-        "x": 120,
-        "y": 240,
+        "x": 150,
+        "y": 60,
         "wires": [
             [
                 "80183cce35748d90"
@@ -225,7 +231,7 @@
         "id": "80183cce35748d90",
         "type": "http request",
         "z": "09c2c15ffa1b32b4",
-        "name": "",
+        "name": "Mapa de vagas",
         "method": "GET",
         "ret": "obj",
         "paytoqs": "ignore",
@@ -237,8 +243,8 @@
         "authType": "",
         "senderr": false,
         "headers": [],
-        "x": 360,
-        "y": 240,
+        "x": 400,
+        "y": 60,
         "wires": [
             [
                 "318c0ed5b7438a31"
@@ -254,20 +260,990 @@
         "order": 0,
         "width": 0,
         "height": 0,
-        "format": "<div ng-repeat=\"sector in msg.payload.sectors\" style=\"margin-bottom:20px\">\n\n    <h2>Setor {{sector.sectorId}}</h2>\n\n    <div style=\"\n    display:grid;\n    grid-template-columns: repeat(10, 35px);\n    gap:5px;\n  \">\n\n        <div ng-repeat=\"spot in sector.spots\" style=\"\n        width:35px;\n        height:35px;\n        border-radius:5px;\n        background-color:\n          {{spot.state === 'FREE' ? '#22c55e' : '#ef4444'}};\n      \">\n        </div>\n\n    </div>\n\n</div>",
+        "format": "<div style=\"display:flex\">\n  <div ng-repeat=\"sector in msg.payload.sectors\" style=\"margin-bottom:20px; flex:1; display:flex;flex-direction:column;align-items:center; gap:5px\">\n\n    <h2>Setor {{sector.sectorId}}</h2>\n\n    <div style=\"\n      display:grid;\n      grid-template-columns: repeat(6, 45px);\n      gap:5px;\n    \">\n\n      <div ng-repeat=\"spot in sector.spots\" style=\"\n          width:45px;\n          height:45px;\n          border-radius:5px;\n          background-color:\n            {{spot.state === 'FREE' ? '#0cbd0c' : '#d12121'}};\n          display:flex;\n          align-items:center;\n          justify-content:center;\n          color:white;\n          font-size:10px;\n          font-weight:bold;\n        \">\n\n        {{spot.spotId}}\n\n      </div>\n\n    </div>\n\n  </div>\n</div>",
         "storeOutMessages": true,
         "fwdInMessages": true,
         "resendOnRefresh": true,
         "templateScope": "local",
         "className": "",
-        "x": 540,
-        "y": 240,
+        "x": 600,
+        "y": 60,
         "wires": [
             []
         ]
     },
     {
-        "id": "cc9ade761de99ef7",
+        "id": "3a1204a6187ee3a7",
+        "type": "inject",
+        "z": "09c2c15ffa1b32b4",
+        "name": "",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "2",
+        "crontab": "",
+        "once": true,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 150,
+        "y": 120,
+        "wires": [
+            [
+                "a9205ac92a0b1454"
+            ]
+        ]
+    },
+    {
+        "id": "a9205ac92a0b1454",
+        "type": "http request",
+        "z": "09c2c15ffa1b32b4",
+        "name": "Resumo dos setores",
+        "method": "GET",
+        "ret": "obj",
+        "paytoqs": "ignore",
+        "url": "http://localhost:3000/api/v1/sectors",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 400,
+        "y": 120,
+        "wires": [
+            [
+                "a10c1078eedb2057"
+            ]
+        ]
+    },
+    {
+        "id": "a10c1078eedb2057",
+        "type": "ui_template",
+        "z": "09c2c15ffa1b32b4",
+        "group": "8d64165c1b9009b0",
+        "name": "",
+        "order": 0,
+        "width": 0,
+        "height": 0,
+        "format": "<div style=\"display:flex;gap:20px;flex-wrap:wrap;justify-content:center;\">\n\n  <div ng-repeat=\"sector in msg.payload\"\n    style=\"\n      background:#1f2937;\n      color:white;\n      padding:20px;\n      border-radius:10px;\n      flex: 1\n    \">\n\n    <h2>Setor {{sector.sectorId}}</h2>\n\n    <p>🚗 Ocupadas: {{sector.occupiedCount}}</p>\n\n    <p>🟢 Livres: {{sector.freeCount}}</p>\n\n    <p>📈 Ocupação:\n      {{(sector.occupancyRate * 100).toFixed(0)}}%\n    </p>\n\n  </div>\n\n</div>",
+        "storeOutMessages": true,
+        "fwdInMessages": true,
+        "resendOnRefresh": true,
+        "templateScope": "local",
+        "className": "",
+        "x": 600,
+        "y": 120,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "9b42c67e91c75d0e",
+        "type": "inject",
+        "z": "09c2c15ffa1b32b4",
+        "name": "",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "2",
+        "crontab": "",
+        "once": true,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 150,
+        "y": 180,
+        "wires": [
+            [
+                "2e55e88c49b488ca"
+            ]
+        ]
+    },
+    {
+        "id": "2e55e88c49b488ca",
+        "type": "http request",
+        "z": "09c2c15ffa1b32b4",
+        "name": "Incidentes",
+        "method": "GET",
+        "ret": "obj",
+        "paytoqs": "ignore",
+        "url": "http://localhost:3000/api/v1/incidents",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 390,
+        "y": 180,
+        "wires": [
+            [
+                "9b8bd2939a5493fd"
+            ]
+        ]
+    },
+    {
+        "id": "9b8bd2939a5493fd",
+        "type": "ui_template",
+        "z": "09c2c15ffa1b32b4",
+        "group": "9752a0380f4fdadb",
+        "name": "",
+        "order": 0,
+        "width": 0,
+        "height": 0,
+        "format": "<div ng-if=\"msg.payload.length === 0\" style=\"\n       padding:20px;\n       background:#16a34a;\n       color:white;\n       border-radius:10px;\n       font-weight:bold;\n     \">\n\n  ✅ Nenhum incidente detectado\n\n</div>\n\n<div ng-repeat=\"incident in msg.payload\" style=\"\n       margin-bottom:10px;\n       padding:15px;\n       background:#dc2626;\n       color:white;\n       border-radius:10px;\n     \">\n\n  <h3>🚨 {{incident.type}}</h3>\n\n  <p><b>Vaga:</b> {{incident.spotId}}</p>\n\n  <p><b>Setor:</b> {{incident.sectorId}}</p>\n\n  <p><b>Abertura:</b> {{incident.tsOpen}}</p>\n\n</div>",
+        "storeOutMessages": true,
+        "fwdInMessages": true,
+        "resendOnRefresh": true,
+        "templateScope": "local",
+        "className": "",
+        "x": 600,
+        "y": 180,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "cb12dc8e78e888d7",
+        "type": "ui_template",
+        "z": "09c2c15ffa1b32b4",
+        "group": "64b2aed97e84ccf9",
+        "name": "",
+        "order": 1,
+        "width": 0,
+        "height": 0,
+        "format": "<div style=\"\n  padding:20px;\n  border-radius:10px;\n  color:white;\n  margin-bottom: 5px;\n  background:\n    {{msg.payload.recommendedSector ? '#2563eb' : '#16a34a'}};\n\">\n\n  <h2>Setor A</h2>\n\n  <div ng-if=\"msg.payload.recommendedSector\">\n\n    <p>\n      🎯 {{msg.payload.message}}\n    </p>\n\n    <small>\n      {{msg.payload.reason}}\n    </small>\n\n  </div>\n\n  <div ng-if=\"!msg.payload.recommendedSector\">\n\n    ✅ Nenhuma recomendação necessária\n\n  </div>\n\n</div>",
+        "storeOutMessages": true,
+        "fwdInMessages": true,
+        "resendOnRefresh": true,
+        "templateScope": "local",
+        "className": "",
+        "x": 640,
+        "y": 260,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "747894d59a8dee0a",
+        "type": "inject",
+        "z": "09c2c15ffa1b32b4",
+        "name": "",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "2",
+        "crontab": "",
+        "once": true,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 150,
+        "y": 260,
+        "wires": [
+            [
+                "bfc544b4c8feb0d6"
+            ]
+        ]
+    },
+    {
+        "id": "bfc544b4c8feb0d6",
+        "type": "http request",
+        "z": "09c2c15ffa1b32b4",
+        "name": "Recomendação do setor A",
+        "method": "GET",
+        "ret": "obj",
+        "paytoqs": "ignore",
+        "url": "http://localhost:3000/api/v1/recommendation?fromSector=A",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 420,
+        "y": 260,
+        "wires": [
+            [
+                "cb12dc8e78e888d7"
+            ]
+        ]
+    },
+    {
+        "id": "4e3a21483e015482",
+        "type": "ui_template",
+        "z": "09c2c15ffa1b32b4",
+        "group": "64b2aed97e84ccf9",
+        "name": "",
+        "order": 2,
+        "width": 0,
+        "height": 0,
+        "format": "<div style=\"\n  padding:20px;\n  border-radius:10px;\n  color:white;\n  margin-bottom: 5px;\n  background:\n    {{msg.payload.recommendedSector ? '#2563eb' : '#16a34a'}};\n\">\n\n  <h2>Setor B</h2>\n\n  <div ng-if=\"msg.payload.recommendedSector\">\n\n    <p>\n      🎯 {{msg.payload.message}}\n    </p>\n\n    <small>\n      {{msg.payload.reason}}\n    </small>\n\n  </div>\n\n  <div ng-if=\"!msg.payload.recommendedSector\">\n\n    ✅ Nenhuma recomendação necessária\n\n  </div>\n\n</div>",
+        "storeOutMessages": true,
+        "fwdInMessages": true,
+        "resendOnRefresh": true,
+        "templateScope": "local",
+        "className": "",
+        "x": 640,
+        "y": 300,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "2a3b68234892b65a",
+        "type": "inject",
+        "z": "09c2c15ffa1b32b4",
+        "name": "",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "2",
+        "crontab": "",
+        "once": true,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 150,
+        "y": 300,
+        "wires": [
+            [
+                "ebe97e478d6f9922"
+            ]
+        ]
+    },
+    {
+        "id": "ebe97e478d6f9922",
+        "type": "http request",
+        "z": "09c2c15ffa1b32b4",
+        "name": "Recomendação do setor B",
+        "method": "GET",
+        "ret": "obj",
+        "paytoqs": "ignore",
+        "url": "http://localhost:3000/api/v1/recommendation?fromSector=B",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 420,
+        "y": 300,
+        "wires": [
+            [
+                "4e3a21483e015482"
+            ]
+        ]
+    },
+    {
+        "id": "f7826127b9a1e765",
+        "type": "ui_template",
+        "z": "09c2c15ffa1b32b4",
+        "group": "64b2aed97e84ccf9",
+        "name": "",
+        "order": 3,
+        "width": 0,
+        "height": 0,
+        "format": "<div style=\"\n  padding:20px;\n  border-radius:10px;\n  color:white;\n  margin-bottom: 5px;\n  background:\n    {{msg.payload.recommendedSector ? '#2563eb' : '#16a34a'}};\n\">\n\n  <h2>Setor C</h2>\n\n  <div ng-if=\"msg.payload.recommendedSector\">\n\n    <p>\n      🎯 {{msg.payload.message}}\n    </p>\n\n    <small>\n      {{msg.payload.reason}}\n    </small>\n\n  </div>\n\n  <div ng-if=\"!msg.payload.recommendedSector\">\n\n    ✅ Nenhuma recomendação necessária\n\n  </div>\n\n</div>",
+        "storeOutMessages": true,
+        "fwdInMessages": true,
+        "resendOnRefresh": true,
+        "templateScope": "local",
+        "className": "",
+        "x": 640,
+        "y": 340,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "0c6f4640b4f27803",
+        "type": "inject",
+        "z": "09c2c15ffa1b32b4",
+        "name": "",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "2",
+        "crontab": "",
+        "once": true,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 150,
+        "y": 340,
+        "wires": [
+            [
+                "b1fd073857eeba94"
+            ]
+        ]
+    },
+    {
+        "id": "b1fd073857eeba94",
+        "type": "http request",
+        "z": "09c2c15ffa1b32b4",
+        "name": "Recomendação do setor C",
+        "method": "GET",
+        "ret": "obj",
+        "paytoqs": "ignore",
+        "url": "http://localhost:3000/api/v1/recommendation?fromSector=C",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 420,
+        "y": 340,
+        "wires": [
+            [
+                "f7826127b9a1e765"
+            ]
+        ]
+    },
+    {
+        "id": "d9dd5d1cd4b2d017",
+        "type": "ui_button",
+        "z": "09c2c15ffa1b32b4",
+        "name": "",
+        "group": "526f108b9eb2d787",
+        "order": 0,
+        "width": "12",
+        "height": "2",
+        "passthru": false,
+        "label": "Lotar Setor A 🚗",
+        "tooltip": "",
+        "color": "",
+        "bgcolor": "",
+        "className": "",
+        "icon": "",
+        "payload": "",
+        "payloadType": "str",
+        "topic": "topic",
+        "topicType": "msg",
+        "x": 210,
+        "y": 520,
+        "wires": [
+            [
+                "1cdb1bd8a0ddeb14"
+            ]
+        ]
+    },
+    {
+        "id": "1cdb1bd8a0ddeb14",
+        "type": "function",
+        "z": "09c2c15ffa1b32b4",
+        "name": "Ocupar A",
+        "func": "const messages = [];\n\nfor (let i = 1; i <= 30; i++) {\n\n    const spotId =\n        `A-${String(i).padStart(2, '0')}`;\n\n    messages.push({\n        topic:\n            `campus/parking/sectors/A/spots/${spotId}/events`,\n\n        payload: JSON.stringify({\n            eventId: Date.now() + '-' + i,\n            ts: new Date().toISOString(),\n            sectorId: 'A',\n            spotId,\n            state: 'OCCUPIED',\n            source: 'dashboard'\n        })\n    });\n}\n\nreturn [messages];",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 400,
+        "y": 520,
+        "wires": [
+            [
+                "68e06cf60483ae27"
+            ]
+        ]
+    },
+    {
+        "id": "68e06cf60483ae27",
+        "type": "mqtt out",
+        "z": "09c2c15ffa1b32b4",
+        "name": "",
+        "topic": "",
+        "qos": "",
+        "retain": "",
+        "respTopic": "",
+        "contentType": "",
+        "userProps": "",
+        "correl": "",
+        "expiry": "",
+        "broker": "f54204d4b3c8a93e",
+        "x": 550,
+        "y": 520,
+        "wires": []
+    },
+    {
+        "id": "0dcc3395a2cca6c8",
+        "type": "ui_button",
+        "z": "09c2c15ffa1b32b4",
+        "name": "",
+        "group": "526f108b9eb2d787",
+        "order": 0,
+        "width": "12",
+        "height": "2",
+        "passthru": false,
+        "label": "Liberar Setor A 🟢",
+        "tooltip": "",
+        "color": "",
+        "bgcolor": "",
+        "className": "",
+        "icon": "",
+        "payload": "",
+        "payloadType": "str",
+        "topic": "topic",
+        "topicType": "msg",
+        "x": 730,
+        "y": 520,
+        "wires": [
+            [
+                "be9902039529833c"
+            ]
+        ]
+    },
+    {
+        "id": "be9902039529833c",
+        "type": "function",
+        "z": "09c2c15ffa1b32b4",
+        "name": "Liberar A",
+        "func": "const messages = [];\n\nfor (let i = 1; i <= 30; i++) {\n\n    const spotId =\n        `A-${String(i).padStart(2, '0')}`;\n\n    messages.push({\n        topic:\n            `campus/parking/sectors/A/spots/${spotId}/events`,\n\n        payload: JSON.stringify({\n            eventId: Date.now() + '-' + i,\n            ts: new Date().toISOString(),\n            sectorId: 'A',\n            spotId,\n            state: 'FREE',\n            source: 'dashboard'\n        })\n    });\n}\n\nreturn [messages];",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 920,
+        "y": 520,
+        "wires": [
+            [
+                "137e99714979c614"
+            ]
+        ]
+    },
+    {
+        "id": "137e99714979c614",
+        "type": "mqtt out",
+        "z": "09c2c15ffa1b32b4",
+        "name": "",
+        "topic": "",
+        "qos": "",
+        "retain": "",
+        "respTopic": "",
+        "contentType": "",
+        "userProps": "",
+        "correl": "",
+        "expiry": "",
+        "broker": "f54204d4b3c8a93e",
+        "x": 1070,
+        "y": 520,
+        "wires": []
+    },
+    {
+        "id": "41e0bca0ed6e5464",
+        "type": "ui_button",
+        "z": "09c2c15ffa1b32b4",
+        "name": "",
+        "group": "526f108b9eb2d787",
+        "order": 0,
+        "width": "12",
+        "height": "2",
+        "passthru": false,
+        "label": "Lotar Setor B 🚗",
+        "tooltip": "",
+        "color": "",
+        "bgcolor": "",
+        "className": "",
+        "icon": "",
+        "payload": "",
+        "payloadType": "str",
+        "topic": "topic",
+        "topicType": "msg",
+        "x": 210,
+        "y": 580,
+        "wires": [
+            [
+                "1a0c16ba0c86d9b7"
+            ]
+        ]
+    },
+    {
+        "id": "1a0c16ba0c86d9b7",
+        "type": "function",
+        "z": "09c2c15ffa1b32b4",
+        "name": "Ocupar B",
+        "func": "const messages = [];\n\nfor (let i = 1; i <= 30; i++) {\n\n    const spotId =\n        `B-${String(i).padStart(2, '0')}`;\n\n    messages.push({\n        topic:\n            `campus/parking/sectors/B/spots/${spotId}/events`,\n\n        payload: JSON.stringify({\n            eventId: Date.now() + '-' + i,\n            ts: new Date().toISOString(),\n            sectorId: 'B',\n            spotId,\n            state: 'OCCUPIED',\n            source: 'dashboard'\n        })\n    });\n}\n\nreturn [messages];",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 400,
+        "y": 580,
+        "wires": [
+            [
+                "8eb5b44e5278f6be"
+            ]
+        ]
+    },
+    {
+        "id": "8eb5b44e5278f6be",
+        "type": "mqtt out",
+        "z": "09c2c15ffa1b32b4",
+        "name": "",
+        "topic": "",
+        "qos": "",
+        "retain": "",
+        "respTopic": "",
+        "contentType": "",
+        "userProps": "",
+        "correl": "",
+        "expiry": "",
+        "broker": "f54204d4b3c8a93e",
+        "x": 550,
+        "y": 580,
+        "wires": []
+    },
+    {
+        "id": "82df9ca9ccc98908",
+        "type": "ui_button",
+        "z": "09c2c15ffa1b32b4",
+        "name": "",
+        "group": "526f108b9eb2d787",
+        "order": 0,
+        "width": "12",
+        "height": "2",
+        "passthru": false,
+        "label": "Liberar Setor B 🟢",
+        "tooltip": "",
+        "color": "",
+        "bgcolor": "",
+        "className": "",
+        "icon": "",
+        "payload": "",
+        "payloadType": "str",
+        "topic": "topic",
+        "topicType": "msg",
+        "x": 730,
+        "y": 580,
+        "wires": [
+            [
+                "8451144b92fb1ad1"
+            ]
+        ]
+    },
+    {
+        "id": "8451144b92fb1ad1",
+        "type": "function",
+        "z": "09c2c15ffa1b32b4",
+        "name": "Liberar B",
+        "func": "const messages = [];\n\nfor (let i = 1; i <= 30; i++) {\n\n    const spotId =\n        `B-${String(i).padStart(2, '0')}`;\n\n    messages.push({\n        topic:\n            `campus/parking/sectors/B/spots/${spotId}/events`,\n\n        payload: JSON.stringify({\n            eventId: Date.now() + '-' + i,\n            ts: new Date().toISOString(),\n            sectorId: 'B',\n            spotId,\n            state: 'FREE',\n            source: 'dashboard'\n        })\n    });\n}\n\nreturn [messages];",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 920,
+        "y": 580,
+        "wires": [
+            [
+                "e803311e21e1df0f"
+            ]
+        ]
+    },
+    {
+        "id": "e803311e21e1df0f",
+        "type": "mqtt out",
+        "z": "09c2c15ffa1b32b4",
+        "name": "",
+        "topic": "",
+        "qos": "",
+        "retain": "",
+        "respTopic": "",
+        "contentType": "",
+        "userProps": "",
+        "correl": "",
+        "expiry": "",
+        "broker": "f54204d4b3c8a93e",
+        "x": 1070,
+        "y": 580,
+        "wires": []
+    },
+    {
+        "id": "665a91efc7a0b4e1",
+        "type": "ui_button",
+        "z": "09c2c15ffa1b32b4",
+        "name": "",
+        "group": "526f108b9eb2d787",
+        "order": 0,
+        "width": "12",
+        "height": "2",
+        "passthru": false,
+        "label": "Lotar Setor C 🚗",
+        "tooltip": "",
+        "color": "",
+        "bgcolor": "",
+        "className": "",
+        "icon": "",
+        "payload": "",
+        "payloadType": "str",
+        "topic": "topic",
+        "topicType": "msg",
+        "x": 210,
+        "y": 640,
+        "wires": [
+            [
+                "79e8c1c7b638fcd0"
+            ]
+        ]
+    },
+    {
+        "id": "79e8c1c7b638fcd0",
+        "type": "function",
+        "z": "09c2c15ffa1b32b4",
+        "name": "Ocupar C",
+        "func": "const messages = [];\n\nfor (let i = 1; i <= 30; i++) {\n\n    const spotId =\n        `C-${String(i).padStart(2, '0')}`;\n\n    messages.push({\n        topic:\n            `campus/parking/sectors/C/spots/${spotId}/events`,\n\n        payload: JSON.stringify({\n            eventId: Date.now() + '-' + i,\n            ts: new Date().toISOString(),\n            sectorId: 'C',\n            spotId,\n            state: 'OCCUPIED',\n            source: 'dashboard'\n        })\n    });\n}\n\nreturn [messages];",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 400,
+        "y": 640,
+        "wires": [
+            [
+                "bec3e7e7d977bfed"
+            ]
+        ]
+    },
+    {
+        "id": "bec3e7e7d977bfed",
+        "type": "mqtt out",
+        "z": "09c2c15ffa1b32b4",
+        "name": "",
+        "topic": "",
+        "qos": "",
+        "retain": "",
+        "respTopic": "",
+        "contentType": "",
+        "userProps": "",
+        "correl": "",
+        "expiry": "",
+        "broker": "f54204d4b3c8a93e",
+        "x": 550,
+        "y": 640,
+        "wires": []
+    },
+    {
+        "id": "074b865a7612adf2",
+        "type": "ui_button",
+        "z": "09c2c15ffa1b32b4",
+        "name": "",
+        "group": "526f108b9eb2d787",
+        "order": 0,
+        "width": "12",
+        "height": "2",
+        "passthru": false,
+        "label": "Liberar Setor C 🟢",
+        "tooltip": "",
+        "color": "",
+        "bgcolor": "",
+        "className": "",
+        "icon": "",
+        "payload": "",
+        "payloadType": "str",
+        "topic": "topic",
+        "topicType": "msg",
+        "x": 730,
+        "y": 640,
+        "wires": [
+            [
+                "ba2d999078dd3d39"
+            ]
+        ]
+    },
+    {
+        "id": "ba2d999078dd3d39",
+        "type": "function",
+        "z": "09c2c15ffa1b32b4",
+        "name": "Liberar C",
+        "func": "const messages = [];\n\nfor (let i = 1; i <= 30; i++) {\n\n    const spotId =\n        `C-${String(i).padStart(2, '0')}`;\n\n    messages.push({\n        topic:\n            `campus/parking/sectors/C/spots/${spotId}/events`,\n\n        payload: JSON.stringify({\n            eventId: Date.now() + '-' + i,\n            ts: new Date().toISOString(),\n            sectorId: 'C',\n            spotId,\n            state: 'FREE',\n            source: 'dashboard'\n        })\n    });\n}\n\nreturn [messages];",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 920,
+        "y": 640,
+        "wires": [
+            [
+                "d4e19410c2787ad8"
+            ]
+        ]
+    },
+    {
+        "id": "d4e19410c2787ad8",
+        "type": "mqtt out",
+        "z": "09c2c15ffa1b32b4",
+        "name": "",
+        "topic": "",
+        "qos": "",
+        "retain": "",
+        "respTopic": "",
+        "contentType": "",
+        "userProps": "",
+        "correl": "",
+        "expiry": "",
+        "broker": "f54204d4b3c8a93e",
+        "x": 1070,
+        "y": 640,
+        "wires": []
+    },
+    {
+        "id": "1275f9097db9b95c",
+        "type": "inject",
+        "z": "09c2c15ffa1b32b4",
+        "name": "Controle de ações",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "2",
+        "crontab": "",
+        "once": true,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 110,
+        "y": 420,
+        "wires": [
+            [
+                "43184c06086b7037"
+            ]
+        ]
+    },
+    {
+        "id": "43184c06086b7037",
+        "type": "http request",
+        "z": "09c2c15ffa1b32b4",
+        "name": "",
+        "method": "GET",
+        "ret": "obj",
+        "paytoqs": "ignore",
+        "url": "http://localhost:3000/api/v1/sectors",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 320,
+        "y": 420,
+        "wires": [
+            [
+                "40870a9a57385d51"
+            ]
+        ]
+    },
+    {
+        "id": "40870a9a57385d51",
+        "type": "function",
+        "z": "09c2c15ffa1b32b4",
+        "name": "function 1",
+        "func": "const messages = [];\n\nmsg.payload.forEach(sector => {\n\n    messages.push({\n        topic: `${sector.sectorId}_LOTAR`,\n        enabled: sector.occupancyRate < 1\n    });\n\n    messages.push({\n        topic: `${sector.sectorId}_LIBERAR`,\n        enabled: sector.occupancyRate > 0\n    });\n\n});\n\nreturn [messages];",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 480,
+        "y": 420,
+        "wires": [
+            [
+                "4cf67e32a135116b"
+            ]
+        ]
+    },
+    {
+        "id": "4cf67e32a135116b",
+        "type": "switch",
+        "z": "09c2c15ffa1b32b4",
+        "name": "",
+        "property": "topic",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "eq",
+                "v": "A_LOTAR",
+                "vt": "str"
+            },
+            {
+                "t": "eq",
+                "v": "A_LIBERAR",
+                "vt": "str"
+            },
+            {
+                "t": "eq",
+                "v": "B_LOTAR",
+                "vt": "str"
+            },
+            {
+                "t": "eq",
+                "v": "B_LIBERAR",
+                "vt": "str"
+            },
+            {
+                "t": "eq",
+                "v": "C_LOTAR",
+                "vt": "str"
+            },
+            {
+                "t": "eq",
+                "v": "C_LIBERAR",
+                "vt": "str"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 6,
+        "x": 650,
+        "y": 420,
+        "wires": [
+            [
+                "d9dd5d1cd4b2d017"
+            ],
+            [
+                "0dcc3395a2cca6c8"
+            ],
+            [
+                "41e0bca0ed6e5464"
+            ],
+            [
+                "82df9ca9ccc98908"
+            ],
+            [
+                "665a91efc7a0b4e1"
+            ],
+            [
+                "074b865a7612adf2"
+            ]
+        ]
+    },
+    {
+        "id": "6cb1ef259a0734c5",
+        "type": "ui_button",
+        "z": "09c2c15ffa1b32b4",
+        "name": "",
+        "group": "526f108b9eb2d787",
+        "order": 3,
+        "width": 0,
+        "height": 0,
+        "passthru": false,
+        "label": "🚨 Flapping Aleatório",
+        "tooltip": "",
+        "color": "",
+        "bgcolor": "",
+        "className": "",
+        "icon": "",
+        "payload": "",
+        "payloadType": "str",
+        "topic": "topic",
+        "topicType": "msg",
+        "x": 160,
+        "y": 720,
+        "wires": [
+            [
+                "f8d6e99e88e0ac1f"
+            ]
+        ]
+    },
+    {
+        "id": "f8d6e99e88e0ac1f",
+        "type": "function",
+        "z": "09c2c15ffa1b32b4",
+        "name": "function 2",
+        "func": "const sectors = [\"A\", \"B\", \"C\"];\n\nconst sector =\n    sectors[Math.floor(Math.random() * sectors.length)];\n\nconst spotNumber =\n    String(Math.floor(Math.random() * 30) + 1).padStart(2, \"0\");\n\nconst spotId = `${sector}-${spotNumber}`;\n\nconst baseTopic =\n    `campus/parking/sectors/${sector}/spots/${spotId}/events`;\n\nconst now = Date.now();\n\n// 🔥 apenas 2 estados (sem loop)\nconst events = [\n    { state: \"OCCUPIED\", delay: 0 },\n    { state: \"FREE\", delay: 1500 }\n];\n\nevents.forEach((e, i) => {\n\n    setTimeout(() => {\n\n        node.send({\n            topic: baseTopic,\n            payload: JSON.stringify({\n                eventId: now + \"-\" + i,\n                ts: new Date().toISOString(),\n                sectorId: sector,\n                spotId,\n                state: e.state,\n                source: \"simple-toggle\"\n            })\n        });\n\n    }, e.delay);\n\n});\n\nreturn null;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 360,
+        "y": 720,
+        "wires": [
+            [
+                "2e2e52448c6b9444"
+            ]
+        ]
+    },
+    {
+        "id": "2e2e52448c6b9444",
+        "type": "mqtt out",
+        "z": "09c2c15ffa1b32b4",
+        "name": "",
+        "topic": "",
+        "qos": "",
+        "retain": "",
+        "respTopic": "",
+        "contentType": "",
+        "userProps": "",
+        "correl": "",
+        "expiry": "",
+        "broker": "f54204d4b3c8a93e",
+        "x": 510,
+        "y": 720,
+        "wires": []
+    },
+    {
+        "id": "d931a331541a5f0f",
         "type": "global-config",
         "env": [],
         "modules": {

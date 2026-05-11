@@ -1,12 +1,19 @@
 import { initDB } from './database.js';
 import express from 'express';
 import mqtt from 'mqtt';
+import crypto from 'crypto';
 
 const app = express();
 app.use(express.json());
 
 const PORT = 3000;
 const db = await initDB();
+
+// tempo simulado
+const SIMULATION_MINUTE_MS = 1000; // 1s = 1 min
+
+const STUCK_OCCUPIED_LIMIT = 24 * 1000;
+const STUCK_FREE_LIMIT = 24 * 1000;
 
 // estado em memória
 const spots = {};
@@ -20,7 +27,9 @@ savedSpots.forEach(spot => {
     sectorId: spot.sectorId,
     state: spot.currentState,
     ts: spot.lastChangeTs,
-    lastChange: Date.now()
+    lastChange: spot.lastChangeTs
+    ? new Date(spot.lastChangeTs).getTime()
+    : Date.now()
   };
 });
 
@@ -34,8 +43,63 @@ client.on('connect', () => {
   client.subscribe('campus/parking/#');
 });
 
+// função de criar incidente
+async function createIncident(type, spot, spotId) {
+
+  try {
+
+    await db.run(
+      `INSERT INTO incidents
+      (tsOpen, type, severity, sectorId, spotId, evidenceJson, status)
+      VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [
+        new Date().toISOString(),
+        type,
+        "HIGH",
+        spot.sectorId,
+        spotId,
+        JSON.stringify({
+          state: spot.state,
+          lastChange: spot.lastChange
+        }),
+        "OPEN"
+      ]
+    );
+
+    console.log(`🚨 INCIDENTE ${type} em ${spotId}`);
+
+  } catch (err) {
+
+    console.error("ERRO AO INSERIR INCIDENTE:");
+    console.error(err.message);
+
+  }
+}
+
+setInterval(() => {
+
+  ['A', 'B', 'C'].forEach(sectorId => {
+
+    client.publish(
+      `campus/parking/sectors/${sectorId}/gateway/status`,
+      JSON.stringify({
+        sectorId,
+        status: "ONLINE",
+        ts: new Date().toISOString()
+      })
+    );
+
+  });
+
+}, 50000);
+
 client.on('message', async (topic, message) => {
   try {
+
+    if (!topic.includes('/spots/')) {
+      return;
+    }
+
     const data = JSON.parse(message.toString());
 
     const now = Date.now();
@@ -111,7 +175,14 @@ client.on('message', async (topic, message) => {
       ]
     );
 
-    console.log(`📍 ${data.spotId} → ${data.state}`);
+    // Evento de vaga
+    if (topic.includes('/spots/')) {
+      console.log(`📍 ${data.spotId} → ${data.state}`);
+    }
+    // Gateway
+    else if (topic.includes('/gateway/status')) {
+      console.log(`📡 Gateway ${data.sectorId} = ${data.status}`);
+    }
 
   } catch (err) {
     console.error('Erro:', err.message);
@@ -175,6 +246,32 @@ app.get('/api/v1/sectors', (req, res) => {
   });
 
   res.json(result);
+});
+
+app.get('/api/v1/sectors/:sectorId/spots', (req, res) => {
+
+  const { sectorId } = req.params;
+
+  if (!['A', 'B', 'C'].includes(sectorId)) {
+    return res.status(400).json({
+      error: 'Setor inválido'
+    });
+  }
+
+  const sectorSpots = Object.entries(spots)
+    .filter(([_, spot]) =>
+      spot.sectorId === sectorId
+    )
+    .map(([spotId, spot]) => ({
+      spotId,
+      state: spot.state,
+      lastChange: spot.lastChange
+    }));
+
+  res.json({
+    sectorId,
+    spots: sectorSpots
+  });
 });
 
 app.get('/api/v1/sectors/:sectorId/free-spots', (req, res) => {
@@ -283,12 +380,383 @@ app.get('/api/v1/recommendations', async (req, res) => {
 });
 
 app.get('/api/v1/incidents', async (req, res) => {
-  const incidents = await db.all(
-    `SELECT * FROM incidents ORDER BY tsOpen DESC`
-  );
+
+  const { status } = req.query;
+
+  let query = `
+    SELECT *
+    FROM incidents
+  `;
+
+  const params = [];
+
+  if (status) {
+    query += ` WHERE status = ?`;
+    params.push(status);
+  }
+
+  query += ` ORDER BY tsOpen DESC`;
+
+  const incidents = await db.all(query, params);
 
   res.json(incidents);
 });
+
+app.get('/api/v1/reports/turnover', async (req, res) => {
+
+  const { sectorId, from, to } = req.query;
+
+  // validar parâmetros
+  if (!sectorId || !from || !to) {
+
+    return res.status(400).json({
+      error: 'Informe sectorId, from e to'
+    });
+
+  }
+
+  try {
+
+    // buscar eventos do setor
+    const events = await db.all(
+      `
+      SELECT *
+      FROM spot_events
+      WHERE sectorId = ?
+      AND ts BETWEEN ? AND ?
+      ORDER BY spotId, ts
+      `,
+      [sectorId, from, to]
+    );
+
+    let turnover = 0;
+
+    // percorre eventos
+    for (let i = 1; i < events.length; i++) {
+
+      const previous = events[i - 1];
+      const current = events[i];
+
+      // mesma vaga
+      if (previous.spotId === current.spotId) {
+
+        // FREE -> OCCUPIED
+        if (
+          previous.state === 'FREE' &&
+          current.state === 'OCCUPIED'
+        ) {
+
+          turnover++;
+
+        }
+      }
+    }
+
+    res.json({
+      sectorId,
+      from,
+      to,
+      turnover
+    });
+
+  } catch (err) {
+
+    console.error(err);
+
+    res.status(500).json({
+      error: err.message
+    });
+
+  }
+
+});
+
+const reported = new Set();
+
+setInterval(async () => {
+
+  const now = Date.now();
+
+  for (const [spotId, spot] of Object.entries(spots)) {
+
+    const lastChange = spot.lastChange || now;
+    const timeInState = now - lastChange;
+
+    const keyOccupied = `${spotId}-STUCK_OCCUPIED`;
+    const keyFree = `${spotId}-STUCK_FREE`;
+
+    const isOccupiedStuck =
+      spot.state === "OCCUPIED" &&
+      timeInState > STUCK_OCCUPIED_LIMIT;
+
+    const isFreeStuck =
+      spot.state === "FREE" &&
+      timeInState > STUCK_FREE_LIMIT;
+
+    // 🟥 STUCK OCCUPIED
+    if (isOccupiedStuck) {
+
+      if (!reported.has(keyOccupied)) {
+        await createIncident("STUCK_OCCUPIED", spot, spotId);
+        reported.add(keyOccupied);
+      }
+
+    } else if (spot.state !== "OCCUPIED") {
+      // só reseta quando muda de estado REALMENTE
+      reported.delete(keyOccupied);
+    }
+
+    // 🟦 STUCK FREE
+    if (isFreeStuck) {
+
+      if (!reported.has(keyFree)) {
+        await createIncident("STUCK_FREE", spot, spotId);
+        reported.add(keyFree);
+      }
+
+    } else if (spot.state !== "FREE") {
+      reported.delete(keyFree);
+    }
+  }
+
+}, 5000);
+
+// SIMULAÇÃO
+let simulationEnabled = false;
+
+// relógio simulado
+let simulatedMinutes = 0;
+
+// 1s = 1 minuto
+setInterval(() => {
+
+  simulatedMinutes += 60;
+
+  // resetar depois de 24h
+  if (simulatedMinutes >= 24 * 60) {
+    simulatedMinutes = 0;
+  }
+
+}, 1000);
+
+// retornar hora simulada
+function simulatedHour() {
+  return Math.floor(simulatedMinutes / 60);
+}
+
+// publicar evento MQTT
+function publishSpotEvent(spotId, state) {
+
+  const sectorId = spotId.split('-')[0];
+
+  const payload = {
+    eventId: crypto.randomUUID(),
+    ts: new Date().toISOString(),
+    sectorId,
+    spotId,
+    state,
+    source: "simulation"
+  };
+
+  client.publish(
+    `campus/parking/sectors/${sectorId}/spots/${spotId}/events`,
+    JSON.stringify(payload)
+  );
+
+  console.log(`📤 SIMULAÇÃO → ${spotId} = ${state}`);
+}
+
+// ocupar vaga
+function occupySpot(spotId) {
+
+  const spot = spots[spotId];
+
+  if (!spot) return;
+
+  // evita ocupar vaga já ocupada
+  if (spot.state === "OCCUPIED") return;
+
+  publishSpotEvent(spotId, "OCCUPIED");
+}
+
+// liberar vaga
+function freeSpot(spotId) {
+
+  const spot = spots[spotId];
+
+  if (!spot) return;
+
+  // evita liberar vaga já livre
+  if (spot.state === "FREE") return;
+
+  publishSpotEvent(spotId, "FREE");
+}
+
+// simulação principal
+function simulateParking() {
+
+  const currentHour = simulatedHour();
+
+  const minutes = simulatedMinutes % 60;
+
+  console.log(
+    `🕒 Hora simulada: ${String(currentHour).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`
+  );
+
+  // horários de pico
+  const isPeak =
+    (currentHour >= 7 && currentHour <= 9) ||
+    (currentHour >= 17 && currentHour <= 19);
+
+  for (const [spotId, spot] of Object.entries(spots)) {
+
+    const random = Math.random();
+
+    // ===============================
+    // HORÁRIO DE PICO
+    // ===============================
+    if (isPeak) {
+
+      // muita chegada
+      if (
+        spot.state === "FREE" &&
+        random < 0.6
+      ) {
+        occupySpot(spotId);
+      }
+
+      // pouca saída
+      if (
+        spot.state === "OCCUPIED" &&
+        random < 0.1
+      ) {
+        freeSpot(spotId);
+      }
+
+    }
+
+    // ===============================
+    // HORÁRIO NORMAL
+    // ===============================
+    else {
+
+      // algumas chegadas
+      if (
+        spot.state === "FREE" &&
+        random < 0.2
+      ) {
+        occupySpot(spotId);
+      }
+
+      // mais saídas
+      if (
+        spot.state === "OCCUPIED" &&
+        random < 0.4
+      ) {
+        freeSpot(spotId);
+      }
+    }
+
+    // ===============================
+    // FLAPPING RARO
+    // ===============================
+    if (random < 0.01) {
+
+      console.log(`⚠️ FLAPPING SIMULADO EM ${spotId}`);
+
+      const currentState = spot.state;
+
+      publishSpotEvent(
+        spotId,
+        currentState === "FREE"
+          ? "OCCUPIED"
+          : "FREE"
+      );
+
+      setTimeout(() => {
+
+        publishSpotEvent(
+          spotId,
+          currentState
+        );
+
+      }, 1000);
+    }
+  }
+}
+
+// snapshot
+setInterval(async () => {
+
+  const sectors = {
+    A: { occupied: 0, free: 0 },
+    B: { occupied: 0, free: 0 },
+    C: { occupied: 0, free: 0 }
+  };
+
+  Object.values(spots).forEach(spot => {
+
+    if (spot.state === "OCCUPIED") {
+      sectors[spot.sectorId].occupied++;
+    } else {
+      sectors[spot.sectorId].free++;
+    }
+
+  });
+
+  for (const [sectorId, data] of Object.entries(sectors)) {
+
+    const total = data.occupied + data.free;
+
+    await db.run(
+      `
+      INSERT INTO sector_snapshots
+      (ts, sectorId, occupiedCount, freeCount, occupancyRate)
+      VALUES (?, ?, ?, ?, ?)
+      `,
+      [
+        new Date().toISOString(),
+        sectorId,
+        data.occupied,
+        data.free,
+        data.occupied / total
+      ]
+    );
+
+  }
+
+  console.log("📸 Snapshot salvo");
+
+}, 60000);
+
+// iniciar simulação
+app.post('/api/v1/simulation/start', (req, res) => {
+
+  simulationEnabled = true;
+
+  res.json({
+    message: 'Simulação iniciada'
+  });
+});
+
+// parar simulação
+app.post('/api/v1/simulation/stop', (req, res) => {
+
+  simulationEnabled = false;
+
+  res.json({
+    message: 'Simulação parada'
+  });
+});
+
+// loop principal
+setInterval(() => {
+
+  if (!simulationEnabled) return;
+
+  simulateParking();
+
+}, 6000);
 
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 API rodando em http://localhost:${PORT}`);

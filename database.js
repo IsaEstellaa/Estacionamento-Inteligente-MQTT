@@ -55,7 +55,42 @@ async function start() {
       reason TEXT,
       dataJson TEXT
     );
+
+    CREATE TABLE IF NOT EXISTS sector_snapshots (
+      ts TEXT,
+      sectorId TEXT,
+      occupiedCount INTEGER,
+      freeCount INTEGER,
+      occupancyRate REAL
+    );
   `);
+
+  const count = await db.get(
+  `SELECT COUNT(*) as total FROM spots`
+);
+
+if (count.total === 0) {
+
+  const sectors = ['A', 'B', 'C'];
+
+  for (const sector of sectors) {
+
+    for (let i = 1; i <= 30; i++) {
+
+      const spotId =
+        `${sector}-${String(i).padStart(2, '0')}`;
+
+      await db.run(
+        `INSERT INTO spots
+        (spotId, sectorId, currentState)
+        VALUES (?, ?, ?)`,
+        [spotId, sector, 'FREE']
+      );
+    }
+  }
+
+  console.log('✅ 90 vagas criadas');
+}
 
   console.log("Tabelas criadas!");
 
