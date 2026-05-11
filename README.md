@@ -28,6 +28,7 @@ O sistema possui:
 * A
 * B
 * C
+  
 30 vagas por setor:
 * A-01 até A-30
 * B-01 até B-30
